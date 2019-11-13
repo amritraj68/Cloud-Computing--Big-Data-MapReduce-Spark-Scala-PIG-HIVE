@@ -1,0 +1,65 @@
+The purpose of this project is to develop a graph analysis program using Apache Spark.
+
+Setting up your Project :
+
+Login into Comet and download and untar project5:
+
+wget http://lambda.uta.edu/cse6331/project5.tgz
+tar xfz project5.tgz
+chmod -R g-wrx,o-wrx project5
+
+Project Description :
+
+You are asked to re-implement Project #3 (Graph Processing) using Spark and Scala. Do not use Map-Reduce. 
+An empty project5/src/main/scala/Partition.scala is provided, as well as scripts to build and run this code on Comet. 
+You should modify Partition.scala only.
+Your main program should take the text file that contains the graph (small-graph.txt or large-graph.txt) as an argument.
+
+The graph can be represented as RDD[ ( Long, Long, List[Long] ) ], where the first Long is the graph node ID,
+the second Long is the assigned cluster ID (-1 if the node has not been assigned yet), and 
+the List[Long] is the adjacent list (the IDs of the neighbors). Here is the pseudo-code:
+
+var graph = /* read graph from args(0); the graph cluster ID is set to -1 except for the first 5 nodes */
+
+for (i <- 1 to depth)
+   graph = graph.flatMap{ /* (1) */ }
+                .reduceByKey(_ max _)
+                .join( graph.map( /* (2) */ ) )
+                .map{ /* (3) */ }
+
+/* finally, print the partition sizes */
+where the mapper function (1) takes a node ( id, cluster, adjacent) in the graph and returns (id,cluster) along with all (x,cluster) for all x in adjacent. 
+Then the join joins the result with the graph (after it is mapped with function (2)). 
+The join returns an RDD of tuples (id,(new,(old,adjacent))) with the new and the old cluster numbers. 
+In function (3) you keep the old cluster of it's not -1, otherwise you use the new.
+Note that in the Comet script, both the Spark local and distributed modes use 2 RDD partitions. 
+This means that in order to get 10 centroids, we need to get 5 from each partition (the first 5 of each partition).
+
+You can compile Partition.scala using:
+
+run partition.build
+
+and you can run it in local mode over the small graph using:
+
+sbatch partition.local.run
+
+Your result should be the same as the small-result.txt. You should modify and run your programs in local mode until you get the correct result. After you make sure that your program runs correctly in local mode, you run it in distributed mode using:
+
+sbatch partition.distr.run
+
+This will work on the moderate-sized graph and will print the results to the output. It should be the same as large-solution.txt.
+
+Optional: Use your laptop to develop your project
+If you'd prefer, you may use your laptop to develop your program and then test it and run it on Comet.
+
+To install the project:
+
+cd
+wget http://lambda.uta.edu/cse6331/project5.tgz
+tar xfz project5.tgz
+
+To compile and run project5:
+cd project5
+mvn install
+rm -rf output
+~/spark-1.5.2-bin-hadoop2.6/bin/spark-submit --class Partition --master local[2] partition.jar small-graph.txt
