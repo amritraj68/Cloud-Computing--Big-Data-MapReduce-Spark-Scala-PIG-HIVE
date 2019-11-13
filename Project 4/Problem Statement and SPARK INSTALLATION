@@ -1,0 +1,60 @@
+The purpose of this project is to develop a data analysis program using Apache Spark.
+
+Setting up your Project :
+
+Login into Comet and download and untar project4:
+
+wget http://lambda.uta.edu/cse6331/project4.tgz
+tar xfz project4.tgz
+
+chmod -R g-wrx,o-wrx project4
+
+Go to project4/examples and look at the Spark example JoinSpark.scala. You can compile JoinSpark.scala using:
+
+run joinSparkScala.build
+and you can run it in local mode using:
+
+sbatch joinSpark.local.run
+
+File join.local.out will contain the trace log of the Spark evaluation.
+
+Project Description :
+
+You are asked to re-implement Project #1 (KMeans clustering) using Spark and Scala. An empty project4/src/main/scala/KMeans.scala is provided, as well as scripts to build and run this code on Comet. You should modify KMeans.scala only. Your main program should take two arguments: the text file that contains the points (points-small.txt or points-large.txt) and the centroids.txt file. The resulting centroids will be written to the output. This time, the process of finding new centroids from previous centroids using KMeans must be repeated 5 times. Note: you need to broadcast the centroids to worker nodes using the Spark broadcast method:
+
+    centroids = /* initial centroids from the file centroids.txt */
+
+    for ( i <- 1 to 5 ) {
+       val cs = sc.broadcast(centroids)
+       centroids = points.map { p => (cs.value.minBy(distance(p,_)), p) }
+                         .groupByKey().map { /* ... calculate a new centroid ... */ }
+
+    }
+where distance(x,y) calculates the distance between two points x and y.
+
+You can compile KMeans.scala using:
+
+run kmeans.build
+
+and you can run it in local mode over the small kmeans using:
+
+sbatch kmeans.local.run
+
+You should modify and run your programs in local mode until you get the correct result. After you make sure that your program runs correctly in local mode, you run it in distributed mode using:
+
+sbatch kmeans.distr.run
+
+This will work on the moderate-sized kmeans and will print the results to the output.
+
+To install Spark and the project:
+
+cd
+wget https://archive.apache.org/dist/spark/spark-1.5.2/spark-1.5.2-bin-hadoop2.6.tgz
+tar xfz spark-1.5.2-bin-hadoop2.6.tgz
+wget http://lambda.uta.edu/cse6331/project4.tgz
+tar xfz project4.tgz
+To compile and run project4:
+cd project4
+mvn install
+rm -rf output
+~/spark-1.5.2-bin-hadoop2.6/bin/spark-submit --class KMeans target/cse6331-project4-0.1.jar points-small.txt centroids.txt
